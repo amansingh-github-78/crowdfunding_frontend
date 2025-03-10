@@ -17,6 +17,7 @@ const DonateFunds = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [user, setUser] = useState(null);
+  const [isValid, setIsValid] = useState(false);
 
   const userMutation = useMutation({
     mutationFn: () => authApi.getUser(),
@@ -69,8 +70,34 @@ const DonateFunds = () => {
 
   const handleNext = () => setStep((prev) => prev + 1);
   const handlePrev = () => setStep((prev) => prev - 1);
-  const handleChange = (e) =>
-    setDonationData({ ...donationData, [e.target.name]: e.target.value });
+
+  const validateInputs = (updatedData) => {
+  const hasCharacterInName = updatedData.donorName.trim().length > 0;
+  const hasDigitInAmount = /^\d+$/.test(updatedData.amount);
+  if(hasCharacterInName && hasDigitInAmount){
+    setIsValid(true)
+  }
+  else{
+    setIsValid(false)
+  }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    let updatedValue = value;
+    if (name === "amount") {
+      updatedValue = value.replace(/[^0-9]/g, ""); // Allow only numbers
+    }
+
+    const updatedData = {
+      ...donationData,
+      [name]: updatedValue || (name === "donorName" ? user.name : ""),
+    };
+
+    setDonationData(updatedData);
+    validateInputs(updatedData);
+  };
 
   return (
     <div className="min-h-fit bg-blue-50 dark:bg-[#e0ba03] text-black flex items-center justify-center p-4">
@@ -89,10 +116,7 @@ const DonateFunds = () => {
               min="0"
               name="amount"
               value={donationData.amount}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9]/g, ""); // Remove non-digit characters
-                handleChange({ target: { name: "amount", value } });
-              }}
+              onChange={handleChange}
               placeholder="₹ Amount"
               className="w-full px-4 py-2 border rounded-md"
             />
@@ -108,13 +132,15 @@ const DonateFunds = () => {
               type="email"
               name="donorEmail"
               readOnly
-              value={(donationData.donorEmail = user?.email || "")}
+              value={(donationData.donorEmail = user?.email || "anonymous")}
               className="w-full px-4 py-2 border rounded-md mt-2"
             />
-
             <button
               onClick={handleNext}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+              disabled={!isValid}
+              className={`mt-4 px-4 py-2 rounded-md text-white ${
+                isValid ? "bg-blue-500" : "bg-gray-400 cursor-not-allowed"
+              }`}
             >
               Next
             </button>
@@ -130,7 +156,7 @@ const DonateFunds = () => {
               <strong>Donation Amount:</strong> ₹ {donationData.amount}
             </p>
             <p className="mb-2">
-              <strong>Your Name:</strong> {(donationData.donorName) ? donationData.donorName : user?.name}
+              <strong>Your Name:</strong> {donationData.donorName}
             </p>
             <p className="mb-2">
               <strong>Email:</strong> {donationData.donorEmail}
