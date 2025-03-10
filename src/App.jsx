@@ -12,7 +12,9 @@ import Donate from "./Pages/donateFunds"
 import Withdraw from "./Pages/withdrawFunds"
 import Contact from "./Pages/Contact";
 import About from "./Pages/About";
-import NotFound from "./Pages/notFound";
+import Reset from "./Pages/ResetPassword";
+import PaymentSuccess from "./Components/Payment/paymentSuccess";
+import PaymentFailure from "./Components/Payment/paymentFailure";
 
 const App = () => {
   return (
@@ -29,13 +31,15 @@ const App = () => {
             <Route path="/explore" element={<ExploreCampaigns />} />
             <Route path="/start" element={<StartCampaigns />} />
             <Route path="/mycampaigns" element={<MyCampaigns />} />
-            <Route path="/donate" element={<Donate />} />
+            <Route path="/donate/:campaignId" element={<Donate />} />
             <Route path="/withdraw" element={<Withdraw />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
             <Route path="/dashboard" element={<Dashboard />} />    
             <Route path="/admin" element={<Admin />} />         
-            <Route path="/notfound" element={<NotFound />} />
+            <Route path="/reset/:resetToken" element={<Reset />} />
+            <Route path="/paymentSuccess/:campaignId/:txnid/:amount/:donorEmail/:donorName" element={<PaymentSuccess />} />
+            <Route path="/paymentFailure/:campaignId" element={<PaymentFailure />} />
           </Routes>
         </main>
 

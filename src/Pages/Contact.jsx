@@ -1,13 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { ApiContext } from "../Store/apiContext";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     reason: "",
-    name: "",
-    email: "",
     contact: "",
     message: "",
   });
+  const { contactApi, authApi } = use(ApiContext);
+  const [user, setUser] = useState(null);
+
+  // Fetch User Data
+  const userMutation = useMutation({
+    mutationFn: () => authApi.getUser(),
+    onSuccess: (data) => {
+      setUser(data.data);
+    },
+    onError: () => {
+      setUser(null);
+    },
+  });
+
+  // Fetch User Data
+  const contactMutation = useMutation({
+    mutationFn: contactApi.submitContactForm,
+    onSuccess: () => {
+      alert("Successfull!!");
+    },
+    onError: () => {
+      alert("Not Succesfull!!");
+    },
+  });
+
+  useEffect(() => {
+    userMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,10 +44,7 @@ const Contact = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // For now, just log the form data (you can integrate your API later)
-    console.log(formData);
-    alert("Your message has been submitted!");
-    // Reset form
+    contactMutation.mutate(formData);
     setFormData({ reason: "", name: "", email: "", contact: "", message: "" });
   };
 
@@ -39,7 +65,7 @@ const Contact = () => {
                   className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200 text-black"
                 >
                   <option value="">Select a reason</option>
-                  <option value="General Inquiry">General Inquiry</option>
+                  <option value="Inquiry">General Inquiry</option>
                   <option value="Complaint">Complaint</option>
                   <option value="Issue">Issue</option>
                   <option value="Feedback">Feedback</option>
@@ -51,22 +77,22 @@ const Contact = () => {
                 <input
                   type="text"
                   name="name"
-                  value={formData.name}
-                  onChange={handleChange}
+                  value={user?.name || ""}
+                  readOnly
                   placeholder="Your Name"
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200 text-black"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200 text-black cursor-not-allowed"
                   required
                 />
               </div>
               <div>
                 <label className="block mb-1">Email</label>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Your Email"
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200 text-black"
+                  type="text"
+                  name="name"
+                  value={user?.email || ""}
+                  readOnly
+                  placeholder="Your Name"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200 text-black cursor-not-allowed"
                   required
                 />
               </div>

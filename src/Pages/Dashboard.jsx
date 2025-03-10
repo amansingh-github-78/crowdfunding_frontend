@@ -1,19 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { ApiContext } from "../Store/apiContext";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const { authApi } = use(ApiContext);
+  const [user, setUser] = useState({});
 
-  // Dummy User Data
-  // eslint-disable-next-line no-unused-vars
-  const [user, setUser] = useState({
-    profilePic: "/favicon.ico",
-    name: "Aman",
-    email: "singhamandeep0708@gmail.com",
-    phone: "+91 9900000000",
-    about: "Full Stack Web Developer",
-    backedCampaigns: ["Education for All", "Tech for Kids"],
-    createdCampaigns: ["FundMyKnowledge Scholarship", "Digital Learning Initiative"],
-  });
+  const mutation = useMutation({
+      mutationFn: () => authApi.getUser(),
+      onSuccess: (data) => {
+        setUser(data.data);
+        console.log(data.data)
+      },
+      onError: () => {
+        setUser(null);
+      },
+    });
+  
+    useEffect(() => {
+      mutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only on mount
 
   // Dummy Contributions Data
   const contributions = [
@@ -64,10 +72,10 @@ const Dashboard = () => {
         {activeTab === "profile" && (
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <img src={user.profilePic} alt="Profile" className="w-20 h-20 rounded-full border-2 border-blue-500" />
+              <img src={user.profileImage?.url} alt="Profile" className="w-20 h-20 rounded-full border-2 border-blue-500" />
               <div>
                 <h2 className="text-2xl font-semibold">{user.name}</h2>
-                <p className="text-gray-300">{user.about}</p>
+                <p className="text-gray-300">{user.bio}</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,10 +85,10 @@ const Dashboard = () => {
               </div>
               <div className="p-4 border rounded-md bg-gray-200 text-black">
                 <p className="font-bold">Phone:</p>
-                <p className="font-semibold">{user.phone}</p>
+                <p className="font-semibold">{user.contact}</p>
               </div>
             </div>
-            <div className="p-4 border rounded-md bg-gray-200 text-black">
+            {/* <div className="p-4 border rounded-md bg-gray-200 text-black">
               <p className="font-bold">Backed Campaigns:</p>
               <ul className="list-disc ml-5 font-semibold">
                 {user.backedCampaigns.map((campaign, index) => (
@@ -95,7 +103,7 @@ const Dashboard = () => {
                   <li key={index}>{campaign}</li>
                 ))}
               </ul>
-            </div>
+            </div> */}
           </div>
         )}
 

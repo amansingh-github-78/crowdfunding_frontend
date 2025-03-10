@@ -1,6 +1,8 @@
 // StartCampaign.jsx
-import { useState } from "react";
-import ImageUploader from "../Components/Campaigns/ImageUploader";
+import { useState, useEffect, use } from "react";
+import { ApiContext } from "../Store/apiContext";
+import { useMutation } from "@tanstack/react-query";
+import ConfirmDialog from "../Utils/confirmDialog";
 
 // Dummy categories (consistent with ExploreCampaigns)
 const categories = [
@@ -11,132 +13,232 @@ const categories = [
   "Students asking for help",
   "Scholarships",
   "Education Infrastructure",
-];
-
-// Initial dummy campaigns data (a few samples)
-const initialDummyCampaigns = [
-  {
-    id: 1,
-    title: "Support Education for Poor Children",
-    category: "Education for Poor Children",
-    verified: "Yes",
-    images: [
-      "/assets/campaign1.jpg",
-      "/assets/campaign1-2.jpg",
-      "/assets/campaign1-3.jpg",
-    ],
-    description: "Help provide education resources for underprivileged children.",
-    story:
-      "Full story for campaign 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    updates: "Latest updates for campaign 1.",
-    backers: 150,
-    comments: ["Great cause!", "I support this!"],
-    videos: ["https://www.youtube.com/embed/dQw4w9WgXcQ"],
-    verification: 80,
-  },
-  {
-    id: 2,
-    title: "Donate Books for Literacy",
-    category: "Books Donation",
-    verified: "No",
-    images: ["/assets/campaign2.jpg", "/assets/campaign2-2.jpg"],
-    description: "Donate books and educational materials to schools.",
-    story:
-      "Full story for campaign 2. Duis aute irure dolor in reprehenderit in voluptate.",
-    updates: "Latest updates for campaign 2.",
-    backers: 80,
-    comments: ["I love this!", "Keep it up!"],
-    videos: [],
-    verification: 65,
-  },
+  "others"
 ];
 
 const StartCampaign = () => {
   // Manage which tab is active: "create" or "edit"
   const [activeTab, setActiveTab] = useState("create");
+  // eslint-disable-next-line no-unused-vars
+  const [error, setError] = useState("");
+  const { campaignApi } = use(ApiContext);
+  const [Campaigns, setCampaigns] = useState(null);
+  const [images, setImages] = useState([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Form data state (also used for editing)
   const [formData, setFormData] = useState({
-    id: null,
     title: "",
     category: "",
     description: "",
     story: "",
+    goal: "",
     images: [],
     videos: [],
+    updates: [],
   });
 
-  // State for campaigns (dummy data)
-  const [dummyCampaigns, setDummyCampaigns] = useState(initialDummyCampaigns);
+  
+  const getCampaignMutation = useMutation({
+    mutationFn: campaignApi.getUserCampaigns,
+    onSuccess: (data) => {
+      setCampaigns(data.data.campaigns);
+    },
+    onError: (err) => {
+      console.log(err);
+      setError(
+        err.response?.data?.message || "Something Went Wrong. Try Again!!"
+      );
+    },
+  });
 
-  // Track if we are editing an existing campaign
-  const [isEditing, setIsEditing] = useState(false);
+  const createCampaignMutation = useMutation({
+    mutationFn: campaignApi.createCampaign,
+    onSuccess: () => {
+      getCampaignMutation.mutate();
+      setSuccessMessage(
+        "Campaign created successfully! Awaiting admin verification."
+      );
+      setFormData({
+        title: "",
+        category: "",
+        description: "",
+        story: "",
+        goal: "",
+        images: [],
+        videos: [],
+        updates: [],
+      });
+    },
+    onError: (err) => {
+      setError(
+        err.response?.data?.message || "Campaign Creation failed. Try Again!!"
+      );
+    },
+  });
 
-  // Message to indicate success (campaign created or updated)
-  const [successMessage, setSuccessMessage] = useState("");
+  const editCampaignMutation = useMutation({
+    mutationFn: ({ campaignId, campaignData }) =>
+      campaignApi.updateCampaign(campaignId, campaignData),
+    onSuccess: () => {
+      getCampaignMutation.mutate();
+      setSuccessMessage("Campaign updated successfully!");
+      setFormData({
+        title: "",
+        category: "",
+        description: "",
+        story: "",
+        goal: "",
+        images: [],
+        videos: [],
+        updates: [],
+      });
+    },
+    onError: (err) => {
+      setError(
+        err.response?.data?.message || "Campaign Updation failed. Try Again!!"
+      );
+    },
+  });
 
-  // Handle form submission for creating/updating a campaign
+  const deleteCampaignMutation = useMutation({
+    mutationFn: campaignApi.deleteCampaign,
+    onSuccess: (data) => {
+      getCampaignMutation.mutate();
+      console.log(data);
+    },
+    onError: (err) => {
+      console.log(err);
+      setError(
+        err.response?.data?.message || "Campaign Deletion failed. Try Again!!"
+      );
+    },
+  });
+
+  useEffect(() => {
+    getCampaignMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
+
     if (isEditing) {
-      // Update existing campaign
-      setDummyCampaigns((prevCampaigns) =>
-        prevCampaigns.map((campaign) =>
-          campaign.id === formData.id ? { ...campaign, ...formData } : campaign
-        )
-      );
-      setSuccessMessage("Campaign updated successfully!");
+      console.log(formData);
+      editCampaignMutation.mutate({
+        campaignId: formData.id,
+        campaignData: formData,
+      });
       setIsEditing(false);
     } else {
-      // Create new campaign
-      const newCampaign = {
-        ...formData,
-        id: dummyCampaigns.length + 1,
-        verified: "No",
-        backers: 0,
-        comments: [],
-        updates: "",
-        verification: 0,
-      };
-      setDummyCampaigns([...dummyCampaigns, newCampaign]);
-      setSuccessMessage("Campaign created successfully! Awaiting admin verification.");
+      console.log(formData);
+      createCampaignMutation.mutate(formData);
     }
-    // Reset form
-    setFormData({
-      id: null,
-      title: "",
-      category: "",
-      description: "",
-      story: "",
-      images: [],
-      videos: [],
-    });
   };
 
-  // Handle input of YouTube embed links (comma separated)
-  const handleVideoLinksChange = (e) => {
-    const value = e.target.value;
-    const videoLinks = value
-      .split(",")
-      .map((link) => link.trim())
-      .filter((link) => link !== "");
-    setFormData({ ...formData, videos: videoLinks });
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setImages((prevImages) => [...prevImages, ...files]);
+    setFormData((prevData) => ({
+      ...prevData,
+      images: [...prevData.images, ...files],
+    }));
   };
 
-  // When editing a campaign, populate the form with its data and switch to the form tab
+  const removeImage = (index) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+    setFormData((prevData) => ({
+      ...prevData,
+      images: prevData.images.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleEditCampaign = (campaign) => {
     setActiveTab("create");
     setIsEditing(true);
     setSuccessMessage("");
     setFormData({
-      id: campaign.id,
-      title: campaign.title,
-      category: campaign.category,
-      description: campaign.description,
-      story: campaign.story,
-      images: campaign.images,
-      videos: campaign.videos,
+      id: campaign._id,
+      title: campaign.title || "",
+      category: campaign.category || "",
+      description: campaign.description || "",
+      story: campaign.story || "",
+      goal: campaign.goal || "",
+      images: campaign.images || [],
+      videos: Array.isArray(campaign.videos)
+        ? campaign.videos.filter((v) => v)
+        : [],
+      updates: Array.isArray(campaign.updates)
+        ? campaign.updates.filter((u) => u)
+        : [],
     });
+
+    setImages(Array.isArray(campaign.images) ? campaign.images : []);
+  };
+
+  const handleDeleteClick = (campaignId) => {
+    setSelectedCampaignId(campaignId);
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedCampaignId) {
+      deleteCampaignMutation.mutate(selectedCampaignId);
+    }
+    setShowConfirm(false);
+    setSelectedCampaignId(null);
+  };
+
+  const cancelDelete = () => {
+    setShowConfirm(false);
+    setSelectedCampaignId(null);
+  };
+
+  const handleVideoChange = (index, value) => {
+    setFormData((prevData) => {
+      const newVideos = [...prevData.videos];
+      newVideos[index] = value;
+      return { ...prevData, videos: newVideos.filter((v) => v) };
+    });
+  };
+
+  const addVideoInput = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      videos: [...prevData.videos, ""],
+    }));
+  };
+
+  const removeVideoInput = (index) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      videos: prevData.videos.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleUpdateChange = (index, value) => {
+    setFormData((prevData) => {
+      const newUpdates = [...prevData.updates];
+      newUpdates[index] = value;
+      return { ...prevData, updates: newUpdates.filter((u) => u) };
+    });
+  };
+
+  const addUpdateInput = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      updates: [...prevData.updates, ""],
+    }));
+  };
+
+  const removeUpdateInput = (index) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      updates: prevData.updates.filter((_, i) => i !== index),
+    }));
   };
 
   return (
@@ -150,7 +252,9 @@ const StartCampaign = () => {
               setSuccessMessage("");
             }}
             className={`px-4 py-2 rounded-md ${
-              activeTab === "create" ? "bg-blue-500 text-white" : "bg-white text-black"
+              activeTab === "create"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-black"
             }`}
           >
             Start a Campaign
@@ -161,7 +265,9 @@ const StartCampaign = () => {
               setSuccessMessage("");
             }}
             className={`px-4 py-2 rounded-md ${
-              activeTab === "edit" ? "bg-blue-500 text-white" : "bg-white text-black"
+              activeTab === "edit"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-black"
             }`}
           >
             Edit Campaign
@@ -238,31 +344,140 @@ const StartCampaign = () => {
                   className="w-full p-2 border rounded-md"
                 ></textarea>
               </div>
+              <div>
+                <label className="block mb-1 text-white">Goal</label>
+                <input
+                  type="number"
+                  value={formData.goal}
+                  onChange={(e) =>
+                    setFormData({ ...formData, goal: e.target.value })
+                  }
+                  required
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
 
               {/* Image Upload */}
-              <ImageUploader/>
+              <div>
+                <label className="block mb-1 text-white">
+                  Upload Images <i>(Less than 1 MB Per Image)</i>
+                </label>
+                {isEditing && (
+                  <p className="text-white text-lg">
+                    <strong>Note: </strong>Remove all Images and Upload again
+                  </p>
+                )}
+                <input
+                  type="file"
+                  name="images"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="w-full mt-2 text-white"
+                />
+
+                {/* Image Preview Section */}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {images.map((image, index) => {
+                    const imageUrl =
+                      image instanceof File
+                        ? URL.createObjectURL(image)
+                        : image; // Handle File and URL
+                    return (
+                      <div key={index} className="relative w-24 h-24">
+                        <img
+                          src={imageUrl}
+                          alt={`uploaded-${index}`}
+                          className="w-full h-full object-cover rounded-lg border border-gray-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-1 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* YouTube Embed Links */}
               <div>
                 <label className="block mb-1 text-white">
-                  YouTube Embed Links (comma separated)
+                  YouTube Embed Links
                 </label>
-                <input
-                  type="text"
-                  value={formData.videos.join(", ")}
-                  onChange={handleVideoLinksChange}
-                  placeholder="https://www.youtube.com/embed/xyz, https://www.youtube.com/embed/abc"
-                  className="w-full p-2 border rounded-md"
-                />
+                {formData.videos.map((video, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={video}
+                      onChange={(e) => handleVideoChange(index, e.target.value)}
+                      className="w-full p-2 border rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeVideoInput(index)}
+                      className="text-xl bg-red-500 text-white border-1 m-1 p-1"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addVideoInput}
+                  className="text-xl bg-gray-300 text-black border-1 m-1 p-1"
+                >
+                  Add +
+                </button>
               </div>
+
+              {/* Updates String Array */}
+              {isEditing &&
+              <div>
+                <label className="block mb-1 text-white">Updates</label>
+                {formData.updates.map((update, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={update}
+                      onChange={(e) =>
+                        handleUpdateChange(index, e.target.value)
+                      }
+                      className="w-full p-2 border rounded-md"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeUpdateInput(index)}
+                      className="text-xl bg-red-500 text-white border-1 m-1 p-1"
+                    >
+                      x
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addUpdateInput}
+                  className="text-xl bg-gray-300 text-black border-1 m-1 p-1"
+                >
+                  Add +
+                </button>
+              </div>}
+
               {/* Submit Button */}
               <div>
-                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                >
                   {isEditing ? "Update Campaign" : "Create Campaign"}
                 </button>
               </div>
               <p className="text-sm text-white">
-                Note: After creation, your campaign will be sent for admin verification. (For New Campigns only)
+                Note: After creation, your campaign will be sent for admin
+                verification. (For New Campigns only)
               </p>
             </form>
           </div>
@@ -271,26 +486,34 @@ const StartCampaign = () => {
         {/* Edit Campaign Section */}
         {activeTab === "edit" && (
           <div className="bg-blue-50 dark:bg-blue-900 p-6 rounded-md shadow-md">
-            <h2 className="text-2xl font-bold mb-4 text-white ">Edit Your Campaigns</h2>
-            {dummyCampaigns.length === 0 ? (
-              <p>No campaigns available.</p>
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              Edit Your Campaigns
+            </h2>
+            {Campaigns.length === 0 ? (
+              <p className="text-white">No campaigns available.</p>
             ) : (
               <div className="space-y-4 bg-blue-900">
-                {dummyCampaigns.map((campaign) => (
+                {Campaigns.map((campaign) => (
                   <div
-                    key={campaign.id}
+                    key={campaign._id}
                     className="border p-4 rounded-md flex justify-between items-center bg-blue-50"
                   >
                     <div>
                       <h3 className="font-bold">{campaign.title}</h3>
                       <p className="text-sm">{campaign.description}</p>
                     </div>
-                    <div>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleEditCampaign(campaign)}
                         className="px-3 py-1 bg-green-500 text-white rounded-md"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(campaign._id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded-md"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -300,6 +523,15 @@ const StartCampaign = () => {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog Component */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={cancelDelete}
+        onConfirm={confirmDelete}
+        title="Are you sure?"
+        message="Do you really want to delete this campaign? This action cannot be undone."
+      />
     </div>
   );
 };

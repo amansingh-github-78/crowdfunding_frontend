@@ -8,12 +8,12 @@ const dummySenderMessages = [
     text: "Hi, is this campaign still active?",
     time: "10:00 AM",
   },
-  {
-    id: 2,
-    sender: "creator",
-    text: "Yes, it is active. How can I help?",
-    time: "10:05 AM",
-  },
+  // {
+  //   id: 2,
+  //   sender: "creator",
+  //   text: "Yes, it is active. How can I help?",
+  //   time: "10:05 AM",
+  // },
 ];
 
 const dummyReceiverChats = [

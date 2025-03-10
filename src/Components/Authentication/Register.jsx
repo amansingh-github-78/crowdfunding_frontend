@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
+import { ApiContext } from "../../Store/apiContext"
+import { useMutation } from "@tanstack/react-query";
 
 const Register = ({ onSwitch }) => {
   const [step, setStep] = useState("register"); // "register" | "verify"
-  const [verificationCode, setVerificationCode] = useState("");
   const [inputCode, setInputCode] = useState("");
   const [verificationStatus, setVerificationStatus] = useState("");
+  const [error, setError] = useState("");
+  const { authApi } = use(ApiContext);
 
   // Form Fields
   const [formData, setFormData] = useState({
@@ -14,6 +17,43 @@ const Register = ({ onSwitch }) => {
     confirmPassword: "",
   });
 
+  const registerMutation = useMutation({
+    mutationFn: authApi.registerUser,
+    onSuccess: (data) => {
+      console.log(data);
+      sessionStorage.setItem("tempToken", data.data.tempToken);
+      setStep("verify");
+    },
+    onError: (err) => {
+      setError(err.response?.data?.message || "Registration failed. Try Again!!");
+    },
+  });
+  
+  const verifyMutation = useMutation({
+    mutationFn: authApi.verifyOtp,
+    onSuccess: (data) => {
+      console.log(data);
+      setVerificationStatus("success");
+      sessionStorage.removeItem("tempToken");
+      setTimeout(() => onSwitch(), 2000);
+    },
+    onError: (err) => {
+      setVerificationStatus("error");
+      console.log(err)
+      setError(err.response?.data?.message || "Verification failed. Try Again!!");
+    },
+  });
+  
+  const handleRegister = (e) => {
+    e.preventDefault();
+    if (isDisabled) return;
+    registerMutation.mutate(formData);
+  };
+  
+  const handleVerify = () => {
+    verifyMutation.mutate({ otp: inputCode });
+  };
+  
   // Validation Errors
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -50,6 +90,7 @@ const Register = ({ onSwitch }) => {
 
     setErrors(newErrors);
     setIsDisabled(!valid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
   // Handle input change
@@ -62,31 +103,13 @@ const Register = ({ onSwitch }) => {
     setTouched({ ...touched, [e.target.name]: true });
   };
 
-  const handleRegister = (e) => {
-    e.preventDefault();
-    if (isDisabled) return;
-
-    // Simulate sending verification code (should be replaced with API call)
-    const generatedCode = "123456";
-    setVerificationCode(generatedCode);
-    setStep("verify");
-  };
-
-  const handleVerify = () => {
-    if (inputCode === verificationCode) {
-      setVerificationStatus("success");
-      setTimeout(() => onSwitch(), 1500);
-    } else {
-      setVerificationStatus("error");
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-lg bg-blue-900 p-6 rounded-lg shadow-md">
         {step === "register" ? (
           <>
             <h2 className="text-2xl font-bold text-center mb-6 text-white">Register</h2>
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
             <form onSubmit={handleRegister}>
               {/** Name Field */}
               <div className="mb-4">
@@ -168,7 +191,7 @@ const Register = ({ onSwitch }) => {
               Enter the verification code sent to your email.
             </p>
             <input
-              type="text"
+              type="number"
               value={inputCode}
               onChange={(e) => setInputCode(e.target.value)}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
@@ -186,7 +209,7 @@ const Register = ({ onSwitch }) => {
               Go Back
             </button>
             {verificationStatus === "success" && (
-              <p className="mt-4 text-green-400 text-center">✅ Email verified successfully!</p>
+              <p className="mt-4 text-green-400 text-center">✅ Email verified successfully! Redirecting to Login...</p>
             )}
             {verificationStatus === "error" && (
               <p className="mt-4 text-red-400 text-center">❌ Code is not valid!</p>

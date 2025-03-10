@@ -1,35 +1,78 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, use } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { ApiContext } from "../Store/apiContext";
+import { useParams, useSearchParams, Link } from "react-router-dom";
 
 const DonateFunds = () => {
+  const { campaignId } = useParams();
   const [step, setStep] = useState(1);
   const [donationData, setDonationData] = useState({
     amount: "",
     donorName: "",
     donorEmail: "",
   });
-  const [transactionStatus, setTransactionStatus] = useState(null); // "success" or "failure"
+  const [transactionStatus, setTransactionStatus] = useState(null);
+  const { paymentApi, authApi } = use(ApiContext);
+  const [searchParams] = useSearchParams();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [user, setUser] = useState(null);
+
+  const userMutation = useMutation({
+    mutationFn: () => authApi.getUser(),
+    onSuccess: (data) => {
+      setUser(data.data);
+    },
+    onError: () => {
+      setUser(null);
+    },
+  });
+
+  const initiatePayment = async () => {
+    setLoading(true);
+    try {
+      const response = await paymentApi.processPayment({
+        campaignId,
+        data: donationData,
+      });
+      if (response.loading) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = response.paymentData.action;
+        Object.entries(response.paymentData).forEach(([key, value]) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+      }
+    } catch (error) {
+      setLoading(false);
+      setSuccess(false);
+      setTransactionStatus(error);
+    }
+  };
+
+  useEffect(() => {
+    userMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
+  useEffect(() => {
+    if (success === true) alert("Payment successful!");
+    else if (success === false) alert("Payment failed!");
+  }, [success]);
 
   const handleNext = () => setStep((prev) => prev + 1);
   const handlePrev = () => setStep((prev) => prev - 1);
   const handleChange = (e) =>
     setDonationData({ ...donationData, [e.target.name]: e.target.value });
 
-  const handlePayment = () => {
-    // Simulate a payment outcome (70% success, 30% failure)
-    const success = Math.random() > 0.3;
-    if (success) {
-      alert("Payment processed via PayU!");
-      setTransactionStatus("success");
-    } else {
-      alert("Payment failed via PayU!");
-      setTransactionStatus("failure");
-    }
-    setStep(4);
-  };
-
   return (
-    <div className="min-h-screen bg-blue-50 dark:bg-[#e0ba03] text-black flex items-center justify-center p-4">
+    <div className="min-h-fit bg-blue-50 dark:bg-[#e0ba03] text-black flex items-center justify-center p-4">
       <div className="max-w-xl w-full bg-white dark:bg-blue-900 rounded-lg shadow-lg p-6">
         <h2 className="text-2xl font-bold text-center mb-4 text-white">
           Donate Funds
@@ -40,51 +83,44 @@ const DonateFunds = () => {
             <h3 className="text-xl font-semibold mb-4 text-white">
               Step 1: Donation Details
             </h3>
-            <div className="mb-4">
-              <label className="block text-gray-200">Donation Amount</label>
-              <input
-                type="number"
-                name="amount"
-                value={donationData.amount}
-                onChange={handleChange}
-                placeholder="₹ Amount"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-200">
-                Your Name
-              </label>
-              <input
-                type="text"
-                name="donorName"
-                value={donationData.donorName}
-                onChange={handleChange}
-                placeholder="Name"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-200">
-                Email
-              </label>
-              <input
-                type="email"
-                name="donorEmail"
-                value={donationData.donorEmail}
-                onChange={handleChange}
-                placeholder="Email"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={handleNext}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Next
-              </button>
-            </div>
+            <input
+              type="number"
+              min="0"
+              name="amount"
+              value={donationData.amount}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, ""); // Remove non-digit characters
+                handleChange({ target: { name: "amount", value } });
+              }}
+              placeholder="₹ Amount"
+              className="w-full px-4 py-2 border rounded-md"
+            />
+
+            <select
+              name="donorName"
+              className="w-full px-4 py-2 border rounded-md mt-2"
+              onChange={(e) => (donationData.donorName = e.target.value)}
+            >
+              <option value={user?.name || ""}>
+                {user?.name || "Your Name"}
+              </option>
+              <option value="Anonymous">Anonymous</option>
+            </select>
+
+            <input
+              type="email"
+              name="donorEmail"
+              readOnly
+              value={(donationData.donorEmail = user?.email || "")}
+              className="w-full px-4 py-2 border rounded-md mt-2"
+            />
+
+            <button
+              onClick={handleNext}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md"
+            >
+              Next
+            </button>
           </div>
         )}
 
@@ -110,10 +146,11 @@ const DonateFunds = () => {
                 Back
               </button>
               <button
-                onClick={handleNext}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                onClick={initiatePayment}
+                className="px-4 py-2 bg-green-500 text-white rounded-md ml-4"
+                disabled={loading}
               >
-                Proceed to Payment
+                {loading ? "Processing..." : "Pay Now"}
               </button>
             </div>
           </div>
@@ -121,76 +158,33 @@ const DonateFunds = () => {
 
         {step === 3 && (
           <div className="text-white">
-            <h3 className="text-xl font-semibold mb-4">Step 3: Payment</h3>
-            <p className="mb-4">
-              You will be redirected to PayU for secure payment processing.
-            </p>
-            <div className="flex justify-between mt-4">
-              <button
-                onClick={handlePrev}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-              >
-                Back
-              </button>
-              <button
-                onClick={handlePayment}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-              >
-                Pay Now
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="text-white">
             {transactionStatus === "success" ? (
               <div>
                 <h3 className="text-xl font-semibold mb-2">
                   Thank you for your donation!
                 </h3>
-                <p className="mb-4">Transaction ID: TXN12345</p>
-                <div className="flex justify-between mt-4">
-                  <button
-                    onClick={() => {
-                      setStep(1);
-                      setTransactionStatus(null);
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Donate Again
-                  </button>
-                  <Link to="/explore">
-                    <button className="px-4 py-2 dark:bg-[#e0ba03] text-black rounded-md hover:bg-amber-400">
-                      Fund Others
-                    </button>
-                  </Link>
-                </div>
+                <p>Transaction ID: {searchParams.get("txnid") || "TXN12345"}</p>
+                <Link
+                  to="/explore"
+                  className="px-4 py-2 bg-yellow-500 text-black rounded-md"
+                >
+                  Fund Others
+                </Link>
               </div>
             ) : (
               <div>
                 <h3 className="text-xl font-semibold mb-2">
                   Unsuccessful Payment
                 </h3>
-                <p className="mb-4">
+                <p>
                   Your transaction could not be completed. Please try again.
                 </p>
-                <div className="flex justify-between mt-4">
-                  <button
-                    onClick={() => {
-                      setStep(1);
-                      setTransactionStatus(null);
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  >
-                    Try Again
-                  </button>
-                  <Link to="/explore">
-                    <button className="px-4 py-2 dark:bg-[#e0ba03] text-black rounded-md hover:bg-amber-400">
-                      Fund Others
-                    </button>
-                  </Link>
-                </div>
+                <Link
+                  to="/explore"
+                  className="px-4 py-2 bg-red-500 text-white rounded-md"
+                >
+                  Fund Others
+                </Link>
               </div>
             )}
           </div>

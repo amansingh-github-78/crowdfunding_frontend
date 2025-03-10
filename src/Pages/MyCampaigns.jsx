@@ -1,86 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
+import { ApiContext } from "../Store/apiContext";
+import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import Messages from "../Components/Communication/messages";
 import Comments from "../Components/Communication/comments";
-// Removed Carousel import from react-multi-carousel since it's no longer used
-
-// Dummy campaign data for MyCampaigns (simulate logged-in user's campaigns)
-const dummyCampaigns = [
-  {
-    id: 1,
-    title: "Support Education for Poor Children",
-    category: "Education for Poor Children",
-    images: [
-      "/trending/campaign1.jpg",
-      "/trending/campaign2.jpg"
-    ],
-    videos: ["https://www.youtube.com/embed/VkBnNxneA_A?si=wYxVLKMxMq8LuALQ",
-      "https://www.youtube.com/embed/rVqR9num8Js?si=Xpg-WupRZ0GyDMxd"
-    ],
-    description:
-      "Help provide education resources for underprivileged children.",
-    story:
-      "Full story for campaign 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    updates: "Latest updates for campaign 1.",
-    verification: 80,
-    backers: 150,
-    totalFunds: "20,000",
-    donationDetails: [
-      { name: "Alice", amount: "100" },
-      { name: "Bob", amount: "50" },
-    ],
-    engagement: "High",
-    comments: ["Great cause!", "I support this!"],
-    fundsWithdrawn: false,
-  },
-  {
-    id: 2,
-    title: "Donate Books for Literacy",
-    category: "Books Donation",
-    images: ["/trending/campaign3.jpg", "/trending/campaign4.jpg"],
-    videos: [],
-    description: "Donate books and educational materials to schools.",
-    story:
-      "Full story for campaign 2. Duis aute irure dolor in reprehenderit in voluptate.",
-    updates: "Latest updates for campaign 2.",
-    verification: 65,
-    backers: 80,
-    totalFunds: "8,000",
-    donationDetails: [
-      { name: "Charlie", amount: "75" },
-      { name: "Dana", amount: "125" },
-    ],
-    engagement: "Medium",
-    comments: ["I love this!", "Keep it up!"],
-    fundsWithdrawn: true,
-  },
-  {
-    id: 3,
-    title: "NGO for Education Improvement",
-    category: "NGO for Education Improvement",
-    images: ["/trending/campaign5.jpg", "/trending/campaign6.jpg"],
-    videos: ["https://www.youtube.com/embed/-nzRB7TrCUc?si=PRwpP2JCvdijOJVx",
-      "https://www.youtube.com/embed/yxR-R4aLmt4?si=sIP3cxqsIjZT2iA6",
-      "https://www.youtube.com/embed/CWeURo9iA3g?si=7JlnGZh5ElgSFX0D"
-    ],
-    description: "Support our NGO to improve educational facilities.",
-    story:
-      "Full story for campaign 3. Excepteur sint occaecat cupidatat non proident.",
-    updates: "Latest updates for campaign 3.",
-    verification: 90,
-    backers: 120,
-    totalFunds: "15,000",
-    donationDetails: [
-      { name: "Eve", amount: "200" },
-      { name: "Frank", amount: "150" },
-    ],
-    engagement: "High",
-    comments: ["Very inspiring!", "I'm donating soon!"],
-    fundsWithdrawn: false,
-  },
-  // Add more dummy campaigns if needed
-];
 
 // CampaignCard Component with image carousel (auto-cycles every 5 seconds)
 const CampaignCard = ({ campaign, onClick }) => {
@@ -115,12 +39,44 @@ const CampaignCard = ({ campaign, onClick }) => {
 
 const MyCampaigns = () => {
   // For demo purposes, assume all dummyCampaigns belong to the logged-in user
-  const myCampaigns = dummyCampaigns;
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [myCampaigns, setMyCampaigns] = useState([]);
+  const [selectedCampaign, setSelectedCampaign] = useState();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [error, setError] = useState("");
+  const { campaignApi } = use(ApiContext);
+
+  const getCampaignMutation = useMutation({
+    mutationFn: campaignApi.getUserCampaigns,
+    onSuccess: (data) => {
+      setMyCampaigns(data.data.campaigns);
+    },
+    onError: (err) => {
+      console.log(err);
+      setError(
+        err.response?.data?.message || "Something Went Wrong. Try Again!!"
+      );
+    },
+  });
+
+  const getCampaignByIdMutation = useMutation({
+    mutationFn: (campaignId) => campaignApi.getCampaignById(campaignId),
+    onSuccess: (data) => {
+      setSelectedCampaign(data.data.campaign);
+    },
+    onError: (err) => {
+      console.error(err);
+      alert(err.response?.data?.message || "Something went wrong!");
+    },
+  });
+
+  useEffect(() => {
+    getCampaignMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   const openDrawer = (campaign) => {
-    setSelectedCampaign(campaign);
+    getCampaignByIdMutation.mutate(campaign);
     setIsDrawerOpen(true);
   };
 
@@ -131,13 +87,61 @@ const MyCampaigns = () => {
 
   // Aggregated Dashboard Data
   const totalFundsRaised = myCampaigns.reduce((sum, campaign) => {
-    const amount = parseFloat(campaign.totalFunds.replace(/[^0-9.-]+/g, ""));
+    const amount = parseFloat(campaign.raisedFunds);
     return sum + amount;
   }, 0);
   const totalBackers = myCampaigns.reduce(
     (sum, campaign) => sum + campaign.backers,
     0
   );
+
+  const analyzeEngagement = (campaigns) => {
+    const engagementCounts = {
+      high: 0,
+      medium: 0,
+      low: 0,
+    };
+
+    // Count the occurrences of each engagement level
+    campaigns.forEach((campaign) => {
+      if (campaign.engagementAnalysis === "high") engagementCounts.high++;
+      else if (campaign.engagementAnalysis === "medium")
+        engagementCounts.medium++;
+      else if (campaign.engagementAnalysis === "low") engagementCounts.low++;
+    });
+
+    // Determine overall engagement level based on cases
+    if (
+      engagementCounts.high >
+      engagementCounts.medium + engagementCounts.low
+    ) {
+      return "High";
+    } else if (
+      engagementCounts.high ===
+      engagementCounts.medium + engagementCounts.low
+    ) {
+      return "Medium-High";
+    } else if (
+      engagementCounts.medium >
+      engagementCounts.high + engagementCounts.low
+    ) {
+      return "Medium";
+    } else if (
+      engagementCounts.medium ===
+      engagementCounts.high + engagementCounts.low
+    ) {
+      return "Medium-Low";
+    } else if (
+      engagementCounts.low >
+      engagementCounts.high + engagementCounts.medium
+    ) {
+      return "Low";
+    } else {
+      return "Mixed";
+    }
+  };
+
+  const overallEngagement = analyzeEngagement(myCampaigns);
 
   return (
     <div className="bg-blue-50 dark:bg-[#e0ba03] min-h-screen py-8 text-black">
@@ -161,7 +165,7 @@ const MyCampaigns = () => {
             </div>
             <div className="p-4 bg-gray-100 rounded-lg text-center">
               <h3 className="text-xl font-semibold">Engagement Score</h3>
-              <p className="mt-2 text-2xl font-bold">High</p>
+              <p className="mt-2 text-2xl font-bold">{overallEngagement}</p>
             </div>
           </div>
         </section>
@@ -172,8 +176,8 @@ const MyCampaigns = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {myCampaigns.map((campaign) => (
               <CampaignCard
-                key={campaign.id}
-                onClick={() => openDrawer(campaign)}
+                key={campaign._id}
+                onClick={() => openDrawer(campaign._id)}
                 campaign={campaign}
               />
             ))}
@@ -257,44 +261,53 @@ const MyCampaigns = () => {
               <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
                 <div
                   className="bg-green-500 h-4 rounded-full"
-                  style={{ width: `${selectedCampaign.verification}%` }}
+                  style={{
+                    width: `${
+                      (selectedCampaign.raisedFunds / selectedCampaign.goal) *
+                      100
+                    }%`,
+                  }}
                 ></div>
               </div>
               <p className="mt-2 text-black">
-                {selectedCampaign.verification}% Goal Achieved
+                {(selectedCampaign.raisedFunds / selectedCampaign.goal) * 100}%
+                Goal Achieved
               </p>
             </div>
             <div className="mt-4">
               <h3 className="text-xl font-semibold">Total Funds Raised</h3>
-              <p>₹ {selectedCampaign.totalFunds}</p>
+              <p>₹ {selectedCampaign.raisedFunds}</p>
             </div>
             <div className="mt-4">
               <h3 className="text-xl font-semibold">Funds Withdrawn</h3>
-              <p>{selectedCampaign.fundsWithdrawn ? "Yes" : "No"}</p>
+              <p>₹ {selectedCampaign.fundsWithdrawn}</p>
             </div>
+          </div>
+
+          {/* Backers Section */}
+          <div className="mt-6">
+            <h3 className="text-xl font-semibold text-black">Backers</h3>
+            <p className="text-black">{selectedCampaign.backers}</p>
           </div>
 
           {/* Donation Details Section */}
           <div className="mt-6 mb-6">
             <h3 className="text-xl font-semibold">Donation Details</h3>
             <div className="space-y-2">
-              {selectedCampaign.donationDetails &&
-                selectedCampaign.donationDetails.map((donation, index) => (
+              {selectedCampaign.donationDetails.length > 0 ? (
+                selectedCampaign.donationDetails.map((donation) => (
                   <div
-                    key={index}
+                    key={donation._id}
                     className="flex justify-between p-2 bg-gray-100 rounded"
                   >
                     <span>{donation.name}</span>
                     <span>₹ {donation.amount}</span>
                   </div>
-                ))}
+                ))
+              ) : (
+                <span>No Donation Yet</span>
+              )}
             </div>
-          </div>
-
-          {/* Engagement Analysis Section */}
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold">Engagement Analysis</h3>
-            <p className="text-gray-600">{selectedCampaign.engagement}</p>
           </div>
 
           {/* Comments Section */}

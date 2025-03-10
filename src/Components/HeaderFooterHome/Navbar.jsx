@@ -14,7 +14,7 @@ const Navbar = () => {
             className="flex items-center space-x-3 rtl:space-x-reverse"
           >
             <img src="/fmk_logo.png" className="h-8" alt="FundMyKnowledge Logo" />
-            <span className="self-center lg:text-2xl md:text-2xl sm:text-sm font-semibold whitespace-nowrap text-blue-900 dark:text-white">
+            <span className="self-center lg:text-2xl md:text-xl sm:text-sm font-semibold whitespace-nowrap text-blue-900 dark:text-white">
               FundMyKnowledge
             </span>
           </Link>
@@ -62,7 +62,7 @@ const Navbar = () => {
                   Home
                 </Link>
               </li>
-              <li className="block lg:block md:hidden">
+              <li className="block md:block lg:block">
                 <Link
                   to="/explore"
                   className="block py-2 px-3 text-blue-900 rounded-sm hover:bg-blue-600 md:hover:bg-transparent md:hover:text-indigo-600 md:p-0 dark:text-white md:dark:hover:text-indigo-300"
@@ -71,7 +71,7 @@ const Navbar = () => {
                   Explore Campaigns
                 </Link>
               </li>
-              <li className="block lg:block md:hidden">
+              <li className="block md:block lg:block">
                 <Link
                   to="/start"
                   className="block py-2 px-3 text-blue-900 rounded-sm hover:bg-blue-600 md:hover:bg-transparent md:hover:text-indigo-600 md:p-0 dark:text-white md:dark:hover:text-indigo-300"
@@ -80,7 +80,7 @@ const Navbar = () => {
                   Start Campaign
                 </Link>
               </li>
-              <li className="block lg:block md:hidden">
+              <li className="block md:block lg:block">
                 <Link
                   to="/mycampaigns"
                   className="block py-2 px-3 text-blue-900 rounded-sm hover:bg-blue-600 md:hover:bg-transparent md:hover:text-indigo-600 md:p-0 dark:text-white md:dark:hover:text-indigo-300"

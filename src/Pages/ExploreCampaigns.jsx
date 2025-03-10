@@ -1,158 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
+import { ApiContext } from "../Store/apiContext";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { FaFilter } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Messages from "../Components/Communication/messages";
 import Comments from "../Components/Communication/comments";
-
-// Updated dummy campaign data with additional properties and 5 extra dummies
-const dummyCampaigns = [
-  {
-    id: 1,
-    title: "Support Education for Poor Children",
-    category: "Education for Poor Children",
-    verified: "Yes",
-    images: [
-      "/trending/campaign1.jpg",
-      "/trending/campaign2.jpg"
-    ],
-    description:
-      "Help provide education resources for underprivileged children.",
-    story:
-      "Full story for campaign 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    updates: "Latest updates for campaign 1.",
-    backers: 150,
-    comments: ["Great cause!", "I support this!"],
-    videos: ["https://www.youtube.com/embed/VkBnNxneA_A?si=wYxVLKMxMq8LuALQ",
-      "https://www.youtube.com/embed/rVqR9num8Js?si=Xpg-WupRZ0GyDMxd"
-    ],
-    verification: 80, // percentage
-  },
-  {
-    id: 2,
-    title: "Donate Books for Literacy",
-    category: "Books Donation",
-    verified: "No",
-    images: ["/trending/campaign3.jpg", "/trending/campaign4.jpg"],
-    description: "Donate books and educational materials to schools.",
-    story:
-      "Full story for campaign 2. Duis aute irure dolor in reprehenderit in voluptate.",
-    updates: "Latest updates for campaign 2.",
-    backers: 80,
-    comments: ["I love this!", "Keep it up!"],
-    videos: [],
-    verification: 65,
-  },
-  {
-    id: 3,
-    title: "NGO for Education Improvement",
-    category: "NGO for Education Improvement",
-    verified: "Yes",
-    images: ["/trending/campaign5.jpg", "/trending/campaign6.jpg"],
-    description: "Support our NGO to improve educational facilities.",
-    story:
-      "Full story for campaign 3. Excepteur sint occaecat cupidatat non proident.",
-    updates: "Latest updates for campaign 3.",
-    backers: 120,
-    comments: ["Very inspiring!", "I'm donating soon!"],
-    videos: ["https://www.youtube.com/embed/-nzRB7TrCUc?si=PRwpP2JCvdijOJVx",
-      "https://www.youtube.com/embed/yxR-R4aLmt4?si=sIP3cxqsIjZT2iA6",
-      "https://www.youtube.com/embed/CWeURo9iA3g?si=7JlnGZh5ElgSFX0D"
-    ],
-    verification: 90,
-  },
-  {
-    id: 4,
-    title: "Students Asking for Help",
-    category: "Students asking for help",
-    verified: "Yes",
-    images: ["/trending/campaign2.jpg", "/trending/campaign5.jpg"],
-    description: "Assist students in need of financial help for tuition.",
-    story:
-      "Full story for campaign 4. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-    updates: "Latest updates for campaign 4.",
-    backers: 60,
-    comments: ["Help them out!", "Wish I could contribute more!"],
-    videos: [],
-    verification: 70,
-  },
-  {
-    id: 5,
-    title: "Scholarships for Underprivileged Students",
-    category: "Scholarships",
-    verified: "Yes",
-    images: ["/trending/campaign1.jpg", "/trending/campaign4.jpg"],
-    description: "Provide scholarships to students in need.",
-    story:
-      "Full story for campaign 5. Aenean commodo ligula eget dolor. Aenean massa.",
-    updates: "Latest updates for campaign 5.",
-    backers: 95,
-    comments: ["Amazing initiative!", "Count me in!"],
-    videos: ["https://www.youtube.com/embed/RDeTdXMOXmI?si=HzKL4y3uomv1mPwc"],
-    verification: 75,
-  },
-  {
-    id: 6,
-    title: "Clean Water for Rural Education Institutions",
-    category: "Education Infrastructure",
-    verified: "Yes",
-    images: ["/trending/campaign3.jpg", "/trending/campaign6.jpg"],
-    description: "Help bring clean water to remote Education Institutions.",
-    story:
-      "Full story for campaign 6. Cum sociis natoque penatibus et magnis dis parturient montes.",
-    updates: "Latest updates for campaign 6.",
-    backers: 200,
-    comments: ["Clean water saves lives!", "Keep up the great work!"],
-    videos: [],
-    verification: 85,
-  },
-  {
-    id: 7,
-    title: "Emergency Maintainance for Natural Disasters",
-    category: "Education Infrastructure",
-    verified: "No",
-    images: ["/trending/campaign6.jpg", "/trending/campaign2.jpg"],
-    description:
-      "Provide emergency maintainance funds to disaster-stricken education facility.",
-    story:
-      "Full story for campaign 7. Donec quam felis, ultricies nec, pellentesque eu, pretium quis.",
-    updates: "Latest updates for campaign 7.",
-    backers: 300,
-    comments: ["Urgent and necessary!", "Sending my support!"],
-    videos: ["https://www.youtube.com/embed/vDCSZGyRwH8?si=TIZdNgfDzk01o7W5"],
-    verification: 95,
-  },
-  {
-    id: 8,
-    title: "Library Access for Remote Communities",
-    category: "Education Infrastructure",
-    verified: "Yes",
-    images: ["/trending/campaign4.jpg", "/trending/campaign1.jpg"],
-    description: "Improve access to Library in remote communities.",
-    story:
-      "Full story for campaign 8. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo.",
-    updates: "Latest updates for campaign 8.",
-    backers: 180,
-    comments: ["Health is wealth!", "Proud to support this cause!"],
-    videos: [],
-    verification: 88,
-  },
-  {
-    id: 9,
-    title: "Community Development Initiatives",
-    category: "Education Infrastructure",
-    verified: "No",
-    images: ["/trending/campaign5.jpg", "/trending/campaign3.jpg"],
-    description: "Support community-led development projects.",
-    story:
-      "Full story for campaign 9. Nullam dictum felis eu pede mollis pretium.",
-    updates: "Latest updates for campaign 9.",
-    backers: 110,
-    comments: ["Great initiative!", "Let's build a better future!"],
-    videos: ["https://www.youtube.com/embed/h4gX4bwxuNU?si=R8Z-0Fr835I3iJ2_"],
-    verification: 80,
-  },
-];
 
 const categories = [
   "All Campaigns",
@@ -162,6 +15,7 @@ const categories = [
   "Students asking for help",
   "Scholarships",
   "Education Infrastructure",
+  "others",
 ];
 
 // CampaignCard Component with image carousel (auto-cycles every 5 seconds)
@@ -201,9 +55,32 @@ const ExploreCampaigns = () => {
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { campaignApi } = use(ApiContext);
+
+  // Fetch campaigns using useQuery (not useMutation)
+  // eslint-disable-next-line no-unused-vars
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["campaigns"],
+    queryFn: campaignApi.getCampaigns,
+    select: (data) => data?.data?.campaigns || [],
+  });
+
+  // Fetch a single campaign by ID
+  const getCampaignByIdMutation = useMutation({
+    mutationFn: (campaignId) => campaignApi.getCampaignById(campaignId),
+    onSuccess: (data) => {
+      setSelectedCampaign(data.data.campaign);
+    },
+    onError: (err) => {
+      console.error(err);
+      alert(err.response?.data?.message || "Something went wrong!");
+    },
+  });
+
+  const campaigns = data || [];
 
   // Filter campaigns based on search term and category
-  const filteredCampaigns = dummyCampaigns.filter((campaign) => {
+  const filteredCampaigns = campaigns.filter((campaign) => {
     const matchesSearch = campaign.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -213,8 +90,19 @@ const ExploreCampaigns = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const openDrawer = (campaign) => {
-    setSelectedCampaign(campaign);
+  const featuredCampaigns = [...filteredCampaigns]
+    .sort((a, b) => {
+      const engagementOrder = { high: 3, medium: 2, low: 1 };
+      const engagementA = engagementOrder[a.engagementAnalysis] || 0;
+      const engagementB = engagementOrder[b.engagementAnalysis] || 0;
+      if (engagementA !== engagementB) return engagementB - engagementA;
+      if (a.raisedFunds !== b.raisedFunds) return b.raisedFunds - a.raisedFunds;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    })
+    .slice(0, 6);
+
+  const openDrawer = (campaignId) => {
+    getCampaignByIdMutation.mutate(campaignId);
     setIsDrawerOpen(true);
   };
 
@@ -288,15 +176,13 @@ const ExploreCampaigns = () => {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Featured Campaigns</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {filteredCampaigns
-              .filter((c) => c.id <= 3)
-              .map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  onClick={() => openDrawer(campaign)}
-                  campaign={campaign}
-                />
-              ))}
+            {featuredCampaigns.map((campaign) => (
+              <CampaignCard
+                key={campaign._id}
+                onClick={() => openDrawer(campaign._id)}
+                campaign={campaign}
+              />
+            ))}
           </div>
         </section>
 
@@ -306,8 +192,8 @@ const ExploreCampaigns = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filteredCampaigns.map((campaign) => (
               <CampaignCard
-                key={campaign.id}
-                onClick={() => openDrawer(campaign)}
+                key={campaign._id}
+                onClick={() => openDrawer(campaign._id)}
                 campaign={campaign}
               />
             ))}
@@ -328,7 +214,7 @@ const ExploreCampaigns = () => {
             <div className="flex justify-between mb-4">
               <button className="mt-6 px-6 py-3 bg-gray-100 text-black rounded-full shadow-lg font-bold">
                 {selectedCampaign.verified === "Yes" ? (
-                  <>100% Verified &#9989;</>
+                  <>Verified &#9989;</>
                 ) : (
                   <>Not Verified &#10060;</>
                 )}
@@ -356,7 +242,7 @@ const ExploreCampaigns = () => {
               <p className="mt-2 text-black">{selectedCampaign.description}</p>
             </div>
             <div className="flex justify-center">
-              <Link to="/donate">
+              <Link to={`/donate/${selectedCampaign._id}`}>
                 <button className="md:ml-12 ml-0 mt-8 mb-8 px-8 py-6 bg-green-400 text-black rounded-full shadow-lg hover:bg-green-500 font-bold md:text-4xl text-2xl hover:after:content-['🥹'] cursor-pointer">
                   Donate Now
                 </button>
@@ -376,9 +262,7 @@ const ExploreCampaigns = () => {
             {/* Videos Section */}
             {selectedCampaign.videos.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">
-                  Videos
-                </h3>
+                <h3 className="text-xl font-semibold mb-4">Videos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedCampaign.videos.map((video, index) => (
                     <div key={index} className="w-full h-64">
@@ -403,18 +287,28 @@ const ExploreCampaigns = () => {
               <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
                 <div
                   className="bg-green-500 h-4 rounded-full"
-                  style={{ width: `${selectedCampaign.verification}%` }}
+                  style={{
+                    width: `${
+                      (selectedCampaign.raisedFunds / selectedCampaign.goal) *
+                      100
+                    }%`,
+                  }}
                 ></div>
               </div>
               <p className="mt-2 text-black">
-                {selectedCampaign.verification}% Goal Achieved
+                {(selectedCampaign.raisedFunds / selectedCampaign.goal) * 100}%
+                Goal Achieved
               </p>
             </div>
 
             {/* Updates Section */}
             <div className="mt-6">
               <h3 className="text-xl font-semibold text-black">Updates</h3>
-              <p className="text-black">{selectedCampaign.updates}</p>
+              <p className="text-black">
+                {selectedCampaign.updates.length > 0
+                  ? selectedCampaign.updates
+                  : "No Updates Yet"}
+              </p>
             </div>
 
             {/* Backers Section */}
@@ -423,9 +317,31 @@ const ExploreCampaigns = () => {
               <p className="text-black">{selectedCampaign.backers}</p>
             </div>
 
+            {/* Donation Details Section */}
+            <div className="mt-6 mb-6">
+              <h3 className="text-xl font-semibold">Donation Details</h3>
+              <div className="space-y-2">
+                {selectedCampaign.donationDetails.length > 0 ? (
+                  selectedCampaign.donationDetails.map((donation) => (
+                    <div
+                      key={donation._id}
+                      className="flex justify-between p-2 bg-gray-100 rounded"
+                    >
+                      <span>{donation.name}</span>
+                      <span>₹ {donation.amount}</span>
+                    </div>
+                  ))
+                ) : (
+                  <span>No Donation Yet</span>
+                )}
+              </div>
+            </div>
+
             {/* Comments Section */}
             <div className="mt-6 bg-blue-900 lg:max-w-4xl md:max-w-2xl max-w-full">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white p-4">Comments</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white p-4">
+                Comments
+              </h3>
               <Comments />
             </div>
 

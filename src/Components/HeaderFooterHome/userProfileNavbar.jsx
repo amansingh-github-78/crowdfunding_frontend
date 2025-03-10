@@ -1,43 +1,45 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { Link } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { ApiContext } from "../../Store/apiContext";
 
 const UserProfileNavbar = () => {
-  // Dummy user data (Replace with real authentication logic)
-  // const dummyUser1 = {
-  //   name: "Aman 1",
-  //   email: "singhamandeep0708@gmail.com",
-  //   avatar: "/favicon.ico",
-  //   admin: "No",
-  // };
-  const dummyUser2 = {
-    name: "Aman 2",
-    email: "as2041909@gmail.com",
-    avatar: "/favicon.ico",
-    admin: "Yes",
-  };
-
-  const [user, setUser] = useState(null); // Initially, no user is logged in
-  const [isOpen, setIsOpen] = useState(false); // Dropdown open/close state
+  const [user, setUser] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [alert, setAlert] = useState(false);
   const dropdownRef = useRef(null);
+  const { authApi } = use(ApiContext);
+  
+  // Fetch User Data
+  const mutation = useMutation({
+    mutationFn: () => authApi.getUser(),
+    onSuccess: (data) => {
+      setUser(data.data);
+    },
+    onError: () => {
+      setUser(null);
+    },
+  });
 
-  const dummyUserSelection = () => {
-    const success = true  // << Change this to false to see logged in user profile and check admin and deashboard features
-    if (success) {
-      handleLogout
-    } else {
-      setUser(dummyUser2);
-    }
-  };
+  useEffect(() => {
+    mutation.mutate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   const handleLogout = () => {
-    setUser(null); // Logs out the user
-    setIsOpen(false); // Close dropdown
+    sessionStorage.removeItem("token");
+    setAlert(true);
+    setUser(null);
+    setIsOpen(false);
   };
 
-  // Toggle dropdown visibility
-  const toggleDropdown = () => {
-    setIsOpen((prev) => !prev);
-  };
+  // Auto-hide alert after 6 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      document.getElementById("alert-1")?.remove();
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [alert]);
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -46,21 +48,63 @@ const UserProfileNavbar = () => {
         setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <>
+      {alert && (
+        <div
+          id="alert-1"
+          className="fixed bottom-0 left-0 right-0 z-[9999] flex justify-center p-4 text-blue-300 shadow-lg"
+          role="alert"
+        >
+          <div className="flex items-center space-x-3 px-6 py-3 rounded-lg border border-blue-300 dark:border-gray-600 bg-white dark:bg-gray-900 shadow-md">
+            <svg
+              className="shrink-0 w-5 h-5"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+            </svg>
+            <div className="text-sm font-medium">
+              User Log Out Successfully!!
+            </div>
+            <button
+              type="button"
+              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-white"
+              data-dismiss-target="#alert-1"
+              aria-label="Close"
+              onClick={() => document.getElementById("alert-1")?.remove()}
+            >
+              <svg
+                className="w-4 h-4"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 14 14"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {!user ? (
         <Link to="/authentication">
           <button
             type="button"
             className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            onClick={dummyUserSelection()} // Simulating login (Remove this in real authentication)
           >
             Log In
           </button>
@@ -69,17 +113,16 @@ const UserProfileNavbar = () => {
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
-            onClick={toggleDropdown}
+            onClick={() => setIsOpen(prev => !prev)}
             className="flex text-sm bg-indigo-500 rounded-full md:me-0 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-800 dark:bg-indigo-600"
           >
             <span className="sr-only">Open user menu</span>
             <img
               className="w-8 h-8 rounded-full"
-              src={user.avatar}
-              alt="user photo"
+              src={user.profileImage?.url}
+              alt="User"
             />
           </button>
-
           {isOpen && (
             <div className="absolute right-0 z-50 my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow-sm dark:bg-blue-800 dark:divide-blue-700">
               <div className="px-4 py-3">
@@ -99,24 +142,16 @@ const UserProfileNavbar = () => {
                     Dashboard
                   </Link>
                 </li>
-                <li className={user.admin === "Yes" ? "" : "hidden"}>
-                  <Link
-                    to="/admin"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 dark:hover:bg-blue-700 dark:text-white"
-                  >
-                    Admin
-                  </Link>
-                </li>
-                {/* <li>
-                  <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 dark:hover:bg-blue-700 dark:text-white">
-                    Profile
-                  </Link>
-                </li> */}
-                {/* <li>
-                  <Link to="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 dark:hover:bg-blue-700 dark:text-white">
-                    Settings
-                  </Link>
-                </li> */}
+                {user.admin === "Yes" && (
+                  <li>
+                    <Link
+                      to="/admin"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 dark:hover:bg-blue-700 dark:text-white"
+                    >
+                      Admin
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <button
                     onClick={handleLogout}

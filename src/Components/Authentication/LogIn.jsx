@@ -1,26 +1,58 @@
+import { useState, use } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { ApiContext } from "../../Store/apiContext"
+import { useNavigate } from "react-router-dom";
+
 const LogIn = ({ onSwitch, onForgot }) => {
+
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const { authApi } = use(ApiContext);
+
+  const navigate = useNavigate();
+
+  // Mutation for login
+  const mutation = useMutation({
+    mutationFn: authApi.loginUser,
+    onSuccess: (data) => {
+      console.log(data)
+      sessionStorage.setItem("token", data.data.token);
+      navigate("/dashboard");
+    },
+    onError: (err) => {
+      setError(err.response?.data?.message || "Login failed");
+    },
+  });
+
+  // Handle Input Change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Handle Form Submit
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    mutation.mutate(formData);
+  };
+
   return (
     <div>
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-lg bg-blue-900 p-6 rounded-lg shadow-md">
-          <div className="bg-blue-900 text-white max-w-lg font-semibold mb-4">
-            This is just a dummy text , Ignore this , i will remove this in
-            future. This is just to inform you that if you want to see logged in
-            user profile for checking out dashboard and admin pages . just go to
-            codebase and in components folder , go to HeaderFooterHome folder
-            and then to userProfileNavbar.jsx , then in it, there is a function
-            called dummyUserSelection at line 23 , there just change success =
-            false and you will be able to see logged in user profile and those
-            pages.
-          </div>
+        <form
+        onSubmit={handleSubmit}
+        >
           <h2 className="text-2xl font-bold text-center mb-6 text-white">
             Login
           </h2>
-          <form>
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
             <div className="mb-4">
               <label className="block text-white">Email</label>
               <input
                 type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -28,12 +60,19 @@ const LogIn = ({ onSwitch, onForgot }) => {
               <label className="block text-white">Password</label>
               <input
                 type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <button className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">
-              Login
+            <button 
+            type="submit"
+            disabled={mutation.isLoading}
+            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">
+              {mutation.isLoading ? "Logging in..." : "Login"}
             </button>
+            </form>
             <div className="flex flex-col justify-center items-center">
               <button
                 onClick={onForgot}
@@ -49,7 +88,6 @@ const LogIn = ({ onSwitch, onForgot }) => {
                 Create an Account
               </button>
             </div>
-          </form>
         </div>
       </div>
     </div>

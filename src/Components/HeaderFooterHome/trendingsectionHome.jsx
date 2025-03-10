@@ -40,6 +40,7 @@ const TrendingCampaigns = () => {
           {!isMobile ? (
             // 🔵 Desktop (Horizontal Scrolling)
             <motion.div
+              key={index => index}
               className="flex space-x-6"
               initial={{ x: "0%" }}
               animate={{ x: "-100%" }}
