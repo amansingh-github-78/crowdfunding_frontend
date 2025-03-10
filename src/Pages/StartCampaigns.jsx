@@ -489,7 +489,7 @@ const StartCampaign = () => {
             <h2 className="text-2xl font-bold mb-4 text-white">
               Edit Your Campaigns
             </h2>
-            {Campaigns.length === 0 ? (
+            {Campaigns?.length === 0 || Campaigns == null ? (
               <p className="text-white">No campaigns available.</p>
             ) : (
               <div className="space-y-4 bg-blue-900">
