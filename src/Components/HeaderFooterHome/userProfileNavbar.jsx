@@ -119,7 +119,7 @@ const UserProfileNavbar = () => {
             <span className="sr-only">Open user menu</span>
             <img
               className="w-8 h-8 rounded-full"
-              src={user.profileImage?.url}
+              src={(user.profileImage?.url) ? user.profileImage?.url : '/fmk_logo.png'}
               alt="User"
             />
           </button>

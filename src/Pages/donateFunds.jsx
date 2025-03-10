@@ -22,6 +22,7 @@ const DonateFunds = () => {
     mutationFn: () => authApi.getUser(),
     onSuccess: (data) => {
       setUser(data.data);
+      console.log(data.data);
     },
     onError: () => {
       setUser(null);
@@ -95,18 +96,14 @@ const DonateFunds = () => {
               placeholder="₹ Amount"
               className="w-full px-4 py-2 border rounded-md"
             />
-
-            <select
+            <input
+              type="name"
               name="donorName"
-              className="w-full px-4 py-2 border rounded-md mt-2"
-              onChange={(e) => (donationData.donorName = e.target.value)}
-            >
-              <option value={user?.name || ""}>
-                {user?.name || "Your Name"}
-              </option>
-              <option value="Anonymous">Anonymous</option>
-            </select>
-
+              required
+              value={donationData.donorName}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-md mt-2 bg-white"
+            />
             <input
               type="email"
               name="donorEmail"
@@ -133,7 +130,7 @@ const DonateFunds = () => {
               <strong>Donation Amount:</strong> ₹ {donationData.amount}
             </p>
             <p className="mb-2">
-              <strong>Your Name:</strong> {donationData.donorName}
+              <strong>Your Name:</strong> {(donationData.donorName) ? donationData.donorName : user?.name}
             </p>
             <p className="mb-2">
               <strong>Email:</strong> {donationData.donorEmail}
