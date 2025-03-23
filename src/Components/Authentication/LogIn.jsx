@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 const LogIn = ({ onSwitch, onForgot }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { authApi } = use(ApiContext);
 
   const navigate = useNavigate();
@@ -15,10 +16,12 @@ const LogIn = ({ onSwitch, onForgot }) => {
     mutationFn: authApi.loginUser,
     onSuccess: (data) => {
       sessionStorage.setItem("token", data.data.token);
+      setLoading(false)
       navigate("/dashboard");
       window.location.reload();
     },
     onError: (err) => {
+      setLoading(false)
       setError(err.response?.data?.message || "Login failed");
     },
   });
@@ -31,6 +34,7 @@ const LogIn = ({ onSwitch, onForgot }) => {
   // Handle Form Submit
   const handleSubmit = (e) => {
     e.preventDefault();
+    setLoading(true)
     mutation.mutate(formData);
   };
 
@@ -80,10 +84,10 @@ const LogIn = ({ onSwitch, onForgot }) => {
             </div>
             <button
               type="submit"
-              disabled={mutation.isLoading}
+              disabled={loading}
               className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
             >
-              {mutation.isLoading ? "Logging in..." : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
           <div className="flex flex-col justify-center items-center">
