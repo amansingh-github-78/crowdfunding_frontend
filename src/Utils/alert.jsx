@@ -20,7 +20,7 @@ const Alert = ({ message, type, key }) => {
       className={`fixed bottom-0 left-0 right-0 z-[9999] flex justify-center p-4 text-${type}-300 shadow-lg`}
       role="alert"
     >
-      <div className="flex items-center space-x-3 px-6 py-3 rounded-lg border border-current dark:border-gray-600 bg-gray-800 shadow-md">
+      <div className="flex items-center space-x-3 px-6 py-3 rounded-lg border border-current dark:border-gray-600 bg-white shadow-md">
         <svg
           className="shrink-0 w-5 h-5"
           aria-hidden="true"
