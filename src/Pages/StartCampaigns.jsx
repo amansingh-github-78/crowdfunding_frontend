@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from "react";
 import { ApiContext } from "../Store/apiContext";
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../Utils/confirmDialog";
 
 // Dummy categories (consistent with ExploreCampaigns)
@@ -13,13 +14,12 @@ const categories = [
   "Students asking for help",
   "Scholarships",
   "Education Infrastructure",
-  "others"
+  "others",
 ];
 
 const StartCampaign = () => {
   // Manage which tab is active: "create" or "edit"
   const [activeTab, setActiveTab] = useState("create");
-  // eslint-disable-next-line no-unused-vars
   const [error, setError] = useState("");
   const { campaignApi } = use(ApiContext);
   const [Campaigns, setCampaigns] = useState(null);
@@ -28,6 +28,8 @@ const StartCampaign = () => {
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Form data state (also used for editing)
   const [formData, setFormData] = useState({
@@ -41,14 +43,12 @@ const StartCampaign = () => {
     updates: [],
   });
 
-  
   const getCampaignMutation = useMutation({
     mutationFn: campaignApi.getUserCampaigns,
     onSuccess: (data) => {
       setCampaigns(data.data.campaigns);
     },
     onError: (err) => {
-      console.log(err);
       setError(
         err.response?.data?.message || "Something Went Wrong. Try Again!!"
       );
@@ -59,9 +59,11 @@ const StartCampaign = () => {
     mutationFn: campaignApi.createCampaign,
     onSuccess: () => {
       getCampaignMutation.mutate();
+      setLoading(false);
       setSuccessMessage(
         "Campaign created successfully! Awaiting admin verification."
       );
+      setTimeout(() => setSuccessMessage(""), 3000);
       setFormData({
         title: "",
         category: "",
@@ -77,6 +79,8 @@ const StartCampaign = () => {
       setError(
         err.response?.data?.message || "Campaign Creation failed. Try Again!!"
       );
+      setTimeout(() => setError(""), 3000);
+      setLoading(false);
     },
   });
 
@@ -85,7 +89,10 @@ const StartCampaign = () => {
       campaignApi.updateCampaign(campaignId, campaignData),
     onSuccess: () => {
       getCampaignMutation.mutate();
+      setLoading(false);
+      setIsEditing(false);
       setSuccessMessage("Campaign updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
       setFormData({
         title: "",
         category: "",
@@ -101,22 +108,30 @@ const StartCampaign = () => {
       setError(
         err.response?.data?.message || "Campaign Updation failed. Try Again!!"
       );
+      setTimeout(() => setError(""), 3000);
+      setLoading(false);
     },
   });
 
   const deleteCampaignMutation = useMutation({
     mutationFn: campaignApi.deleteCampaign,
-    onSuccess: (data) => {
+    onSuccess: () => {
       getCampaignMutation.mutate();
-      console.log(data);
     },
     onError: (err) => {
-      console.log(err);
       setError(
         err.response?.data?.message || "Campaign Deletion failed. Try Again!!"
       );
+      setTimeout(() => setError(""), 3000);
     },
   });
+
+  useEffect(() => {
+    if (!sessionStorage.getItem("token")) {
+      navigate(`/authentication`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   useEffect(() => {
     getCampaignMutation.mutate();
@@ -125,37 +140,52 @@ const StartCampaign = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-
+  
     if (isEditing) {
-      console.log(formData);
       editCampaignMutation.mutate({
         campaignId: formData.id,
         campaignData: formData,
       });
-      setIsEditing(false);
     } else {
-      console.log(formData);
       createCampaignMutation.mutate(formData);
     }
+  
+    setLoading(true);
+    
+    // Clear form and images preview after submission
+    setFormData({
+      title: "",
+      category: "",
+      description: "",
+      story: "",
+      goal: "",
+      images: [],
+      videos: [],
+      updates: [],
+    });
+  
+    setImages([]); // Clear image preview
   };
-
+  
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    setImages((prevImages) => [...prevImages, ...files]);
-    setFormData((prevData) => ({
-      ...prevData,
-      images: [...prevData.images, ...files],
-    }));
+    
+    if (isEditing) {
+      // Clear previous images when editing and uploading new ones
+      setImages([...files]);
+      setFormData((prevData) => ({
+        ...prevData,
+        images: [...files],
+      }));
+    } else {
+      setImages((prevImages) => [...prevImages, ...files]);
+      setFormData((prevData) => ({
+        ...prevData,
+        images: [...prevData.images, ...files],
+      }));
+    }
   };
-
-  const removeImage = (index) => {
-    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
-    setFormData((prevData) => ({
-      ...prevData,
-      images: prevData.images.filter((_, i) => i !== index),
-    }));
-  };
-
+  
   const handleEditCampaign = (campaign) => {
     setActiveTab("create");
     setIsEditing(true);
@@ -167,16 +197,20 @@ const StartCampaign = () => {
       description: campaign.description || "",
       story: campaign.story || "",
       goal: campaign.goal || "",
-      images: campaign.images || [],
-      videos: Array.isArray(campaign.videos)
-        ? campaign.videos.filter((v) => v)
-        : [],
-      updates: Array.isArray(campaign.updates)
-        ? campaign.updates.filter((u) => u)
-        : [],
+      images: [], // Don't show existing images in preview
+      videos: Array.isArray(campaign.videos) ? campaign.videos.filter((v) => v) : [],
+      updates: Array.isArray(campaign.updates) ? campaign.updates.filter((u) => u) : [],
     });
-
-    setImages(Array.isArray(campaign.images) ? campaign.images : []);
+  
+    setImages([]); // Ensure image preview starts empty
+  };
+  
+  const removeImage = (index) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+    setFormData((prevData) => ({
+      ...prevData,
+      images: prevData.images.filter((_, i) => i !== index),
+    }));
   };
 
   const handleDeleteClick = (campaignId) => {
@@ -280,11 +314,6 @@ const StartCampaign = () => {
             <h2 className="text-2xl font-bold mb-4 text-white">
               {isEditing ? "Edit Campaign" : "Start a Campaign"}
             </h2>
-            {successMessage && (
-              <div className="mb-4 p-2 bg-green-200 text-green-800 rounded-md">
-                {successMessage}
-              </div>
-            )}
             <form onSubmit={handleFormSubmit} className="space-y-4">
               {/* Title */}
               <div>
@@ -360,11 +389,11 @@ const StartCampaign = () => {
               {/* Image Upload */}
               <div>
                 <label className="block mb-1 text-white">
-                  Upload Images <i>(Less than 1 MB Per Image)</i>
+                  Upload Images <i>(Less than 1 MB Per Image and Maximum 10 Images)</i>
                 </label>
                 {isEditing && (
                   <p className="text-white text-lg">
-                    <strong>Note: </strong>Remove all Images and Upload again
+                    <strong>Note: </strong>Upload All Images Again!!
                   </p>
                 )}
                 <input
@@ -435,51 +464,69 @@ const StartCampaign = () => {
               </div>
 
               {/* Updates String Array */}
-              {isEditing &&
-              <div>
-                <label className="block mb-1 text-white">Updates</label>
-                {formData.updates.map((update, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={update}
-                      onChange={(e) =>
-                        handleUpdateChange(index, e.target.value)
-                      }
-                      className="w-full p-2 border rounded-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeUpdateInput(index)}
-                      className="text-xl bg-red-500 text-white border-1 m-1 p-1"
-                    >
-                      x
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addUpdateInput}
-                  className="text-xl bg-gray-300 text-black border-1 m-1 p-1"
-                >
-                  Add +
-                </button>
-              </div>}
+              {isEditing && (
+                <div>
+                  <label className="block mb-1 text-white">Updates</label>
+                  {formData.updates.map((update, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={update}
+                        onChange={(e) =>
+                          handleUpdateChange(index, e.target.value)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeUpdateInput(index)}
+                        className="text-xl bg-red-500 text-white border-1 m-1 p-1"
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addUpdateInput}
+                    className="text-xl bg-gray-300 text-black border-1 m-1 p-1"
+                  >
+                    Add +
+                  </button>
+                </div>
+              )}
 
               {/* Submit Button */}
               <div>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                  disabled={loading}
                 >
-                  {isEditing ? "Update Campaign" : "Create Campaign"}
+                  {isEditing
+                    ? loading
+                      ? "Updating..."
+                      : "Update Campaign"
+                    : loading
+                    ? "Creating......"
+                    : "Create Campaign"}
                 </button>
               </div>
               <p className="text-sm text-white">
-                Note: After creation, your campaign will be sent for admin
-                verification. (For New Campigns only)
+                Note: After campaign creation or updation, your campaign will be sent for admin
+                verification.
               </p>
             </form>
+            {successMessage && (
+              <div className="mb-4 mt-4 p-2 bg-green-200 text-green-800 rounded-md">
+                {successMessage}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 mt-4 p-2 bg-red-400 text-white rounded-md">
+                {error}
+              </div>
+            )}
           </div>
         )}
 

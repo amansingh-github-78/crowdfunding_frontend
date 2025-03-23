@@ -1,30 +1,32 @@
 import { useState, useEffect, use } from "react";
 import { ApiContext } from "../Store/apiContext"
 import { useMutation } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 const ResetPassword = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("")
   const { authApi } = use(ApiContext);
-  const params = useSearchParams()
+  const params = useParams("resetToken")
 
   const [formData, setFormData] = useState({
-    newPassword: "", params: params
+    newPassword: "", params: params.resetToken
   });
 
   const Mutation = useMutation({
     mutationFn: authApi.resetPassword,
     onSuccess: (data) => {
       setSuccess(data.data.message)
+      setTimeout(()=> setSuccess(""), 3000)
     },
     onError: (err) => {
       setError(err.response?.data?.message || "Password Didn't reset. Try Again!!");
+      setTimeout(()=> setError(""), 3000)
     },
   });
 
-  const handleReset = () => {
-    console.log(formData)
+  const handleReset = (e) => {
+    e.preventDefault();
     Mutation.mutate(formData);
   };
 
@@ -72,8 +74,6 @@ const ResetPassword = () => {
         <h2 className="text-2xl font-bold text-center mb-6 text-white">
           Reset Password
         </h2>
-        {success && <p className="text-green-500 text-sm mb-3">{success}</p>}
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
         <form onSubmit={handleReset}>
           <div className="mb-4">
             <label className="block text-white">Password</label>
@@ -126,6 +126,8 @@ const ResetPassword = () => {
             Reset
           </button>
         </form>
+        {success && <p className="text-green-500 text-lg mt-3">{success}</p>}
+        {error && <p className="text-red-500 text-lg mt-3">{error}</p>}
       </div>
     </div>
   );

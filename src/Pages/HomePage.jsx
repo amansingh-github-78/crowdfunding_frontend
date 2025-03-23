@@ -1,4 +1,5 @@
-import { useState } from "react";
+"use server"
+
 import "flowbite";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
@@ -6,11 +7,6 @@ import TrendingCampaigns from "../Components/HeaderFooterHome/trendingsectionHom
 import { Link } from "react-router-dom";
 
 const HomePage = () => {
-  const [faqOpen, setFaqOpen] = useState(null);
-
-  const toggleFAQ = (index) => {
-    setFaqOpen(faqOpen === index ? null : index);
-  };
 
   return (
     <div className="bg-gray-100 m-2">
@@ -19,7 +15,7 @@ const HomePage = () => {
         className="relative w-full h-screen flex items-start justify-center bg-cover bg-center"
         style={{ backgroundImage: "url('/herosection_bg_2.jpg')" }}
       >
-        <div className="bg-blue-50 border-gray-200 dark:bg-blue-900 bg-opacity-50 lg:m-20 md:m-8 m-4 p-10 rounded-lg text-center text-white max-w-8xl">
+        <article className="bg-blue-50 border-gray-200 dark:bg-blue-900 bg-opacity-50 lg:m-20 md:m-8 m-4 p-10 rounded-lg text-center text-white max-w-8xl">
           <motion.h1
             className="text-5xl md:text-7xl font-bold mb-4"
             initial={{ opacity: 0, y: -50 }}
@@ -46,12 +42,12 @@ const HomePage = () => {
               Ask for Funding {/*Start Campaign Section*/}
             </Link>
           </motion.div>
-        </div>
+        </article>
       </section>
 
       {/* How It Works Section */}
       <section className="py-16 bg-blue-50 border-gray-200 dark:bg-blue-900">
-        <div className="max-w-6xl mx-auto text-center">
+        <article className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-white">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
             {["Create Campaign", "Get Verified", "Receive Donations"].map(
@@ -67,7 +63,7 @@ const HomePage = () => {
               )
             )}
           </div>
-        </div>
+        </article>
       </section>
 
       {/* Trending Campaigns */}     
@@ -75,7 +71,7 @@ const HomePage = () => {
 
       {/* FAQ Section */}
       <section className="py-16 bg-[#e0ba03] border-y-2 border-gray-50 dark:border-blue-700">
-        <div className="max-w-4xl mx-auto">
+        <article className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-800">FAQs</h2>
           <div className="mt-8 p-2">
             {[
@@ -96,20 +92,16 @@ const HomePage = () => {
               },
             ].map(({ question, answer }, index) => (
               <div key={index} className="border-b py-4">
-                <button
+                <p
                   className="w-full text-left flex justify-between items-center text-lg font-semibold"
-                  onClick={() => toggleFAQ(index)}
                 >
                   {question}
-                  <span>{faqOpen === index ? "−" : "+"}</span>
-                </button>
-                {faqOpen === index && (
+                </p>
                   <p className="mt-2 text-gray-600">{answer}</p>
-                )}
               </div>
             ))}
           </div>
-        </div>
+        </article>
       </section>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState, use } from "react";
 import { ApiContext } from "../../Store/apiContext";
 import { useMutation } from "@tanstack/react-query";
 
-const ForgotPassword = ({ onBack }) => {
+const ForgotPassword = ({ onBack , notlogin}) => {
   const [error, setError] = useState("");
   const { authApi } = use(ApiContext);
   const [success, setSuccess] = useState("");
@@ -32,7 +32,6 @@ const ForgotPassword = ({ onBack }) => {
 
   return (
     <div>
-      <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-lg bg-blue-900 p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-bold text-center mb-6 text-white">
             Forgot Password
@@ -49,7 +48,7 @@ const ForgotPassword = ({ onBack }) => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>-
+            </div>
             <button
               name="button1"
               type="submit"
@@ -59,16 +58,17 @@ const ForgotPassword = ({ onBack }) => {
             </button>
           </form>
           <button
-              name="button2"
-              type="button"
-              onClick={onBack}
-              className="w-full mt-4 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-            >
-              Go back to Login
-            </button>
+            disabled={notlogin}
+            hidden={notlogin}
+            name="button2"
+            type="button"
+            onClick={onBack}
+            className="w-full mt-4 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+          >
+            Go back to Login
+          </button>
         </div>
       </div>
-    </div>
   );
 };
 

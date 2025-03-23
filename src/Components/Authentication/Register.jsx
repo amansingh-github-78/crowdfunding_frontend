@@ -6,6 +6,7 @@ const Register = ({ onSwitch }) => {
   const [step, setStep] = useState("register"); // "register" | "verify"
   const [inputCode, setInputCode] = useState("");
   const [verificationStatus, setVerificationStatus] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { authApi } = use(ApiContext);
 
@@ -20,26 +21,25 @@ const Register = ({ onSwitch }) => {
   const registerMutation = useMutation({
     mutationFn: authApi.registerUser,
     onSuccess: (data) => {
-      console.log(data);
       sessionStorage.setItem("tempToken", data.data.tempToken);
+      setLoading(false)
       setStep("verify");
     },
     onError: (err) => {
+      setLoading(false)
       setError(err.response?.data?.message || "Registration failed. Try Again!!");
     },
   });
   
   const verifyMutation = useMutation({
     mutationFn: authApi.verifyOtp,
-    onSuccess: (data) => {
-      console.log(data);
+    onSuccess: () => {
       setVerificationStatus("success");
       sessionStorage.removeItem("tempToken");
       setTimeout(() => onSwitch(), 2000);
     },
     onError: (err) => {
       setVerificationStatus("error");
-      console.log(err)
       setError(err.response?.data?.message || "Verification failed. Try Again!!");
     },
   });
@@ -48,6 +48,7 @@ const Register = ({ onSwitch }) => {
     e.preventDefault();
     if (isDisabled) return;
     registerMutation.mutate(formData);
+    setLoading(true)
   };
   
   const handleVerify = () => {
@@ -109,7 +110,7 @@ const Register = ({ onSwitch }) => {
         {step === "register" ? (
           <>
             <h2 className="text-2xl font-bold text-center mb-6 text-white">Register</h2>
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            {error && <p className="text-red-500 text-md mb-3">{error}</p>}
             <form onSubmit={handleRegister}>
               {/** Name Field */}
               <div className="mb-4">
@@ -169,10 +170,10 @@ const Register = ({ onSwitch }) => {
 
               <button
                 type="submit"
-                disabled={isDisabled}
+                disabled={isDisabled || loading}
                 className={`w-full text-white py-2 rounded-md ${isDisabled ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
               >
-                Register
+                {loading ? "Registering..." : "Register"}
               </button>
               <div className="flex flex-col justify-center items-center">
                 <button
@@ -199,8 +200,9 @@ const Register = ({ onSwitch }) => {
             <button
               onClick={handleVerify}
               className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600"
+              disabled={loading}
             >
-              Verify
+              {loading ? "Verifying..." : "Verify"}
             </button>
             <button
               onClick={() => setStep("register")}

@@ -1,7 +1,7 @@
 import { useState, useEffect, use } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ApiContext } from "../Store/apiContext";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, useNavigate} from "react-router-dom";
 
 const DonateFunds = () => {
   const { campaignId } = useParams();
@@ -15,18 +15,18 @@ const DonateFunds = () => {
   const { paymentApi, authApi } = use(ApiContext);
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
   const [user, setUser] = useState(null);
   const [isValid, setIsValid] = useState(false);
+  const navigate = useNavigate();
 
   const userMutation = useMutation({
     mutationFn: () => authApi.getUser(),
     onSuccess: (data) => {
       setUser(data.data);
-      console.log(data.data);
     },
     onError: () => {
       setUser(null);
+      navigate(`/authentication`)
     },
   });
 
@@ -53,7 +53,6 @@ const DonateFunds = () => {
       }
     } catch (error) {
       setLoading(false);
-      setSuccess(false);
       setTransactionStatus(error);
     }
   };
@@ -62,11 +61,6 @@ const DonateFunds = () => {
     userMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
-
-  useEffect(() => {
-    if (success === true) alert("Payment successful!");
-    else if (success === false) alert("Payment failed!");
-  }, [success]);
 
   const handleNext = () => setStep((prev) => prev + 1);
   const handlePrev = () => setStep((prev) => prev - 1);

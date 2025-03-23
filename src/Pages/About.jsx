@@ -1,11 +1,13 @@
+"use server"
+
 import { motion } from "framer-motion";
 
 const About = () => {
   return (
     <div className="bg-[#e0ba03] min-h-screen p-6">
-      <div className="max-w-7xl mx-auto space-y-12 ">
+      <section className="max-w-7xl mx-auto space-y-12 ">
         {/* About Our Website */}
-        <section className="bg-blue-900 p-6 rounded-lg shadow-lg">
+        <article className="bg-blue-900 p-6 rounded-lg shadow-lg">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             About FundMyKnowledge
           </h1>
@@ -15,10 +17,10 @@ const About = () => {
           <p className="mt-2 text-gray-200 text-lg">
             We are committed to transparency, security, and fostering social change. Every donation makes a difference, and together, we can build a brighter future.
           </p>
-        </section>
+        </article>
 
         {/* How It Works */}
-        <section className="bg-blue-900 p-6 rounded-lg shadow-lg">
+        <article className="bg-blue-900 p-6 rounded-lg shadow-lg">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             How It Works
           </h2>
@@ -35,7 +37,7 @@ const About = () => {
               <img
                 src="/fmk_logo.png"
                 alt="How It Works"
-                className="w-full h-auto object-cover rounded-md"
+                className="w-full h-96 object-fill  rounded-md"
               />
             </div>
             <div className="mt-4">
@@ -48,10 +50,10 @@ const About = () => {
               ></iframe>
             </div>
           </motion.div>
-        </section>
+        </article>
 
         {/* Terms & Conditions */}
-        <section className="bg-blue-900 p-6 rounded-lg shadow-lg">
+        <article className="bg-blue-900 p-6 rounded-lg shadow-lg">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             Terms & Conditions
           </h2>
@@ -61,10 +63,10 @@ const About = () => {
           <p className="mt-2 text-gray-200 text-lg">
             The platform is not responsible for the actions of individual campaign creators or donors. All transactions are subject to verification, and funds may be withheld until campaigns meet the necessary criteria for approval.
           </p>
-        </section>
+        </article>
 
         {/* Privacy Policy */}
-        <section className="bg-blue-900 p-6 rounded-lg shadow-lg">
+        <article className="bg-blue-900 p-6 rounded-lg shadow-lg">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             Privacy Policy
           </h2>
@@ -74,8 +76,8 @@ const About = () => {
           <p className="mt-2 text-gray-200 text-lg">
             All data is securely stored and handled in accordance with industry best practices. We are committed to safeguarding your information and ensuring that your experience on our platform is both secure and seamless.
           </p>
-        </section>
-      </div>
+        </article>
+      </section>
     </div>
   );
 };
