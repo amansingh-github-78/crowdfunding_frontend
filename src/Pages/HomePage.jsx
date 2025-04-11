@@ -1,13 +1,13 @@
-"use server"
+"use server";
 
 import "flowbite";
 import { motion } from "framer-motion";
 import { FaCheckCircle } from "react-icons/fa";
 import TrendingCampaigns from "../Components/HeaderFooterHome/trendingsectionHome";
 import { Link } from "react-router-dom";
+import VideoHoverBox from "../Components/HeaderFooterHome/videoBoxHome";
 
 const HomePage = () => {
-
   return (
     <div className="bg-gray-100 m-2">
       {/* Hero Section */}
@@ -47,9 +47,11 @@ const HomePage = () => {
 
       {/* How It Works Section */}
       <section className="py-16 bg-blue-50 border-gray-200 dark:bg-blue-900">
-        <article className="max-w-6xl mx-auto text-center">
+        <article className="max-w-full mx-auto text-center">
           <h2 className="text-3xl font-bold text-white">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+
+          {/* Layout for small & medium devices (kept intact) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10 lg:m-4">
             {["Create Campaign", "Get Verified", "Receive Donations"].map(
               (title, index) => (
                 <motion.div
@@ -66,14 +68,34 @@ const HomePage = () => {
         </article>
       </section>
 
-      {/* Trending Campaigns */}     
-        <TrendingCampaigns />
+      {/* Trending Campaigns */}
+      <TrendingCampaigns />
+
+      {/* Video Previews of Campaigns */}
+      <section className="min-h-screen flex flex-col justify-center items-center bg-blue-900 p-8">
+        <div className="block space-y-8 w-full max-w-full">
+          {/* Left box: video reveals from the left */}
+          <VideoHoverBox
+            videoSrc="https://www.youtube.com/embed/yxR-R4aLmt4?si=sIP3cxqsIjZT2iA6"
+            thumbnailSrc="/trending/campaign1.jpg"
+            title="Empower the next generation of innovators with modern education!"
+            reverse={false}
+          />
+          {/* Right box: video reveals from the right */}
+          <VideoHoverBox
+            videoSrc="https://www.youtube.com/embed/CWeURo9iA3g?si=7JlnGZh5ElgSFX0D"
+            thumbnailSrc="/trending/campaign3.jpg"
+            title="Discover inspiring stories and support them with your donations!"
+            reverse={true}
+          />
+        </div>
+      </section>
 
       {/* FAQ Section */}
       <section className="py-16 bg-[#e0ba03] border-y-2 border-gray-50 dark:border-blue-700">
         <article className="max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-800">FAQs</h2>
-          <div className="mt-8 p-2">
+          <div className="mt-8 p-4 md:p-2">
             {[
               {
                 question: "How does FundMyKnowledge work?",
@@ -90,14 +112,29 @@ const HomePage = () => {
                 answer:
                   "Yes, you can request withdrawals as per our guidelines.",
               },
+              {
+                question: "Who can start a campaign on FundMyKnowledge?",
+                answer:
+                  "Anyone with a genuine need for educational support can create a campaign after verification.",
+              },
+              {
+                question: "What kind of campaigns are allowed?",
+                answer:
+                  "Campaigns focused on educational needs like tuition, books, courses, school/college fees or other related categories are welcome.",
+              },
+              {
+                question: "How long does it take to verify a campaign?",
+                answer:
+                  "Campaign verification typically takes 24-48 hours after submitting campaign details and verifying personal details with Admin.",
+              },
             ].map(({ question, answer }, index) => (
               <div key={index} className="border-b py-4">
-                <p
-                  className="w-full text-left flex justify-between items-center text-lg font-semibold"
-                >
+                <p className="w-full text-left flex justify-between items-center text-xl font-semibold">
                   {question}
                 </p>
-                  <p className="mt-2 text-gray-600">{answer}</p>
+                <p className="mt-2 text-lg text-gray-700 pl-6 relative before:content-['⇒'] before:absolute before:left-0">
+                  {answer}
+                </p>
               </div>
             ))}
           </div>

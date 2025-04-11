@@ -28,7 +28,7 @@ const TrendingCampaigns = () => {
     "/trending/campaign5.jpg",
     "/trending/campaign6.jpg",
   ]);
-  
+
   // Cloned for smooth infinite scrolling
   const infiniteCampaigns = [...campaigns, campaigns[0], campaigns[1]];
 
@@ -40,7 +40,6 @@ const TrendingCampaigns = () => {
           {!isMobile ? (
             // 🔵 Desktop (Horizontal Scrolling)
             <motion.div
-              key={index => index}
               className="flex space-x-6"
               initial={{ x: "0%" }}
               animate={{ x: "-100%" }}
@@ -52,21 +51,22 @@ const TrendingCampaigns = () => {
               }}
             >
               {infiniteCampaigns.map((src, index) => (
-                <>
-                  <Link to="/explore" onClick={() => window.scrollTo(0, 0)}>
-                    <div
-                      key={index}
-                      className="relative overflow-hidden rounded-lg shadow-lg flex-shrink-0 pt-8"
-                      style={{ width: "250px", height: "300px" }}
-                    >
-                      <img
-                        src={src}
-                        alt={`Campaign ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </Link>
-                </>
+                <Link
+                  key={index}
+                  to="/explore"
+                  onClick={() => window.scrollTo(0, 0)}
+                >
+                  <div
+                    className="relative overflow-hidden rounded-lg shadow-lg flex-shrink-0 pt-8"
+                    style={{ width: "250px", height: "300px" }}
+                  >
+                    <img
+                      src={src}
+                      alt={`Campaign ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </Link>
               ))}
             </motion.div>
           ) : (
@@ -74,7 +74,7 @@ const TrendingCampaigns = () => {
             <div className="h-[900px] overflow-hidden flex flex-col items-center">
               <motion.div
                 className="flex flex-col space-y-6"
-                initial={{ y: "-100%" }}
+                initial={{ y: "-50%" }}
                 animate={{ y: "0%" }}
                 transition={{
                   repeat: Infinity,
@@ -84,21 +84,22 @@ const TrendingCampaigns = () => {
                 }}
               >
                 {infiniteCampaigns.map((src, index) => (
-                  <>
-                    <Link to="/explore" onClick={() => window.scrollTo(0, 0)}>
-                      <div
-                        key={index}
-                        className="relative overflow-hidden rounded-lg shadow-lg flex-shrink-0"
-                        style={{ width: "300px", height: "250px" }}
-                      >
-                        <img
-                          src={src}
-                          alt={`Campaign ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </Link>
-                  </>
+                  <Link
+                    key={index}
+                    to="/explore"
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    <div
+                      className="relative overflow-hidden rounded-lg shadow-lg flex-shrink-0"
+                      style={{ width: "300px", height: "250px" }}
+                    >
+                      <img
+                        src={src}
+                        alt={`Campaign ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Link>
                 ))}
               </motion.div>
             </div>
